@@ -5,6 +5,12 @@ PSQL="psql -X --username=freecodecamp --dbname=salon --tuples-only -c"
 echo -e "\n~~~~~ My Salon ~~~~~\n"
 
 MAIN_MENU() {
+
+  if [[ $1 ]]
+  then
+  echo -e "\n$1"
+  fi
+
   # get available services
   AVAILABLE_SERVICES=$($PSQL "SELECT service_id, name FROM services ORDER BY service_id")
 
@@ -19,29 +25,28 @@ MAIN_MENU() {
   done
 
   # Prompt for service selection
-  read SERVICE_ID_SELECTED
-
-  # Validate if the selected service exists
-  exists=$($PSQL "SELECT EXISTS(SELECT 1 FROM services WHERE service_id = $SERVICE_ID_SELECTED)")
-  exists=$(echo $exists | tr -d ' ')  # Remove leading/trailing whitespace
-
-  while [ "$exists" = "f" ]
+  while true
   do
-    echo -e "\nI could not find that service. What would you like today?"
-
-    echo "$AVAILABLE_SERVICES" | while IFS='|' read -r SERVICE_ID NAME
-    do
-      trimmed_service_id=$(echo "$SERVICE_ID" | tr -d ' ')
-      trimmed_name=$(echo "$NAME" | sed 's/  */ /g')
-      printf "%s) %s\n" "$trimmed_service_id" "$trimmed_name"
-    done
-
-    # Prompt for service selection again
     read SERVICE_ID_SELECTED
 
-    # Validate if the selected service exists again
+    # Check if input is a number
+    if [[ ! $SERVICE_ID_SELECTED =~ ^[0-9]+$ ]]
+    then
+      echo -e "\nInvalid input. Please enter a valid service number."
+      continue
+    fi
+
+    # Validate if the selected service exists
     exists=$($PSQL "SELECT EXISTS(SELECT 1 FROM services WHERE service_id = $SERVICE_ID_SELECTED)")
     exists=$(echo $exists | tr -d ' ')  # Remove leading/trailing whitespace
+
+    if [ "$exists" = "f" ]
+    then
+      echo -e "\nI could not find that service. Please enter a valid service number."
+      continue
+    fi
+
+    break
   done
 
   # get customer info
